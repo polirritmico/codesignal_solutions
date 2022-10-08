@@ -1,0 +1,14 @@
+CREATE PROCEDURE solution()
+BEGIN
+	# Expected @coords (string): MULTIPOINT(0 0; 1 2; 2 1; 5 1; 5 2)
+	SET @coords = (
+		SELECT CONCAT("Multipoint(",
+					  GROUP_CONCAT(x, " ", y),
+					  ")")
+		FROM places
+	);
+	# From docs: https://dev.mysql.com/doc/refman/8.0/en/spatial-operator-functions.html#function_st-convexhull
+	SELECT ST_Area(ST_ConvexHull(ST_GeomFromText(@coords)))
+	AS area;
+END
+
