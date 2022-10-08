@@ -1,0 +1,12 @@
+CREATE PROCEDURE solution()
+BEGIN
+	SELECT name
+	FROM people_hobbies
+	# DESCRIBE people_hobbies hobbies:
+	# hobbies: set('reading';'sports';'filmwatching';'swimming';'painting';'writing')
+	# 000001 → 1; 000010 → 2; 000100 → 3; 001000 → 4; 010000 → 5; 100000 → 6
+	# sports + reading → 0000001 + 000010
+	WHERE hobbies & 1 AND hobbies & 2
+	ORDER BY name
+	;
+END

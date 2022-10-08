@@ -1,0 +1,6 @@
+CREATE PROCEDURE solution()
+    SELECT name
+    FROM people_interests
+    WHERE interests & 1 AND interests & 8 # reading → 000000000001; drawing → 000000001000
+    ORDER BY name
+
