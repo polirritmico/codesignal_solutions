@@ -8,8 +8,8 @@ class TestBase(unittest.TestCase):
 
     #@unittest.skip
     def test_case1(self):
-        case = "input"
-        expected = "expected"
+        case = 
+        expected = 
         output = solution(case)
         self.assertEqual(output, expected)
 
