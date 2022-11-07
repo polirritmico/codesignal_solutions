@@ -20,6 +20,9 @@ elif [[ $1 == "-r" ]]; then
     cp "$python_folder"/test_"$2".py test_"$2".py
     ln -sfn "$2".py __main__.py
     exit
+elif [[ $1 == "-C" ]]; then
+    nvim *.py
+    exit
 elif [[ $1 == "-c" || $1 == "-d" ]]; then
     rm -r __pycache__
     rm ./*.py
