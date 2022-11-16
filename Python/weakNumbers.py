@@ -1,40 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-def solution(input):
-    max_weakness = 0
-    max_weakness_matches = 0
-    numbers_list = [number for number in range(1, input + 1)]
-    for number in numbers_list:
-        number_weakness = get_weakness(number)
-        if max_weakness < number_weakness:
-            max_weakness = number_weakness
-            max_weakness_matches = 1
-        elif max_weakness == number_weakness:
-            max_weakness_matches += 1
-    return [max_weakness, max_weakness_matches]
+def solution(base_number):
+    divisors_list = []
+    for number in range(1, base_number + 1):
+        number_divisors = 0
+        for sub_number in range(1, number + 1):
+            if number % sub_number == 0:
+                number_divisors += 1
+        divisors_list.append(number_divisors)
 
+    weakness_list = []
+    for number in range(base_number):
+        number_weakness = 0
+        number_divisors = divisors_list[number]
+        for sub_number in range(1, number + 1):
+            if number_divisors < divisors_list[sub_number]:
+                number_weakness += 1
+        weakness_list.append(number_weakness)
 
-divisors_dict = {}
+    max_weakness = max(weakness_list)
+    max_weakness_count = weakness_list.count(max_weakness)
+    return [max_weakness, max_weakness_count]
 
-def get_divisors(number):
-    if number in divisors_dict:
-        return divisors_dict[number]
-    divisors = 0
-    for i in range(1, number + 1):
-        if number % i == 0:
-            divisors += 1
-    divisors_dict[number] = divisors
-    return divisors
-
-
-def get_weakness(number):
-    number_divisors = get_divisors(number)
-    weakness = 0
-    for i in range(1, number + 1):
-        if number_divisors < get_divisors(i):
-            weakness += 1
-    return weakness
 
 
 def main():
