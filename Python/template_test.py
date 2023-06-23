@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from REPLACE import *
+from REPLACE import solution
+
 
 class TestBase(unittest.TestCase):
-
     #@unittest.skip
     def test_case1(self):
         case = 

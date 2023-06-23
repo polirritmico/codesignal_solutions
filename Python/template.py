@@ -9,6 +9,7 @@ def main():
     case = 0
     print(solution(case))
 
+
 if __name__ == "__main__":
     main()
 
