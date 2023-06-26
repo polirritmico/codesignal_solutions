@@ -93,10 +93,7 @@ def valid_crosswords_counter(words: tuple) -> int:
                     left_btm = left[idx_btm_ver + idx_left_ver]
                     if left_btm != btm_left:
                         continue
-                    chars = "top←: {} left↑: {} btm←: {} left↓: {}".format(
-                        top_left, left_top, btm_left, left_btm
-                    )
-                    print(chars)
+                    limit_right_hor = min(limit_top_hor - idx_top_hor, limit_btm_hor - idx_btm_hor)
                     #limit_right_ver = min(left_len - idx_left_ver, right_len - idx_btm_ver)
                     #limit_right_hor = min(top_len - idx_top_hor, btm_len - idx_btm_ver)
                     #limit_right_hor = min(0, idx_btm_ver)
