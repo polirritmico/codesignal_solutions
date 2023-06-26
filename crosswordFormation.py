@@ -73,24 +73,30 @@ def valid_crosswords_counter(words: tuple) -> int:
     #                        print(coords)
     #                        print(letters)
     #                        valid_count += 1
+
     counter = 0
     limit_top_hor = top_len - 2
     limit_left_ver = left_len - 2
     limit_btm_hor = btm_len - 2
     limit_right_ver = right_len - 2
+
     for idx_top_hor in range(limit_top_hor):
         top_left = top[idx_top_hor]
         for idx_left_ver in range(limit_left_ver):
             left_top = left[idx_left_ver]
             if top_left != left_top:
                 continue
-            limit_btm_ver = min()
+            limit_btm_ver = min(limit_left_ver - idx_left_ver, limit_right_ver)
             for idx_btm_hor in range(limit_btm_hor):
                 btm_left = btm[idx_btm_hor]
                 for idx_btm_ver in range(2, limit_btm_ver):
                     left_btm = left[idx_btm_ver + idx_left_ver]
                     if left_btm != btm_left:
                         continue
+                    chars = "top←: {} left↑: {} btm←: {} left↓: {}".format(
+                        top_left, left_top, btm_left, left_btm
+                    )
+                    print(chars)
                     #limit_right_ver = min(left_len - idx_left_ver, right_len - idx_btm_ver)
                     #limit_right_hor = min(top_len - idx_top_hor, btm_len - idx_btm_ver)
                     #limit_right_hor = min(0, idx_btm_ver)
@@ -121,6 +127,7 @@ def solution(words: list[str]) -> int:
     for permutation in itertools.permutations(words):
         valid_crosswords: int = valid_crosswords_counter(permutation)
         valid_solutions += valid_crosswords
+        return valid_solutions
     return valid_solutions
 
 
