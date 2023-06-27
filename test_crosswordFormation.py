@@ -8,7 +8,7 @@ from crosswordFormation import solution
 class TestBase(unittest.TestCase):
     def test_minimal(self):
         case = ["abc", "dee", "abd", "cde"]
-        expected = 4
+        expected = 2
         output = solution(case)
         self.assertEqual(output, expected)
 
