@@ -32,7 +32,8 @@
 # will occupy 4 + 7 = 11 lines.
 
 
-def solution(numbers: int) -> int:
+def solution(numbers: list[int]) -> int:
+    numbers.sort()
     numbers_count = len(numbers)
     headers = []
     for number in numbers:
