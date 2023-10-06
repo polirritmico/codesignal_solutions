@@ -35,15 +35,24 @@ Example
 
 
 def solution(input_str: str, min_limit: int, max_limit: int) -> bool:
-    words = input_str.split(" ")
-    for word in words:
-        pass
+    len_input_str = len(input_str)
+    for width in range(min_limit, max_limit + 1):
+        newline_offset = 0
+        for line in range(1, len_input_str):
+            position = width * line + newline_offset
+            if position >= len_input_str or input_str[position] != " ":
+                break
+            if len_input_str - position == width + 1:
+                return True
+            newline_offset += 1
+    return False
 
 
 def main():
     string = "Look at this example of a correct text"
     lf = 5
     r = 15
+    # expected = True
     print(solution(string, lf, r))
 
 
