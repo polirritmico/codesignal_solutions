@@ -29,7 +29,6 @@ The bishops don't belong to the same diagonal, so they don't move.
 
 
 def solution(bishop1: str, bishop2: str) -> list[str]:
-    borders = "ah18"
     if abs(ord(bishop1[0]) - ord(bishop2[0])) != abs(int(bishop1[1]) - int(bishop2[1])):
         return sorted([bishop1, bishop2])
 
@@ -38,6 +37,7 @@ def solution(bishop1: str, bishop2: str) -> list[str]:
     bishop1_vertical_move = -1 if bishop1[1] < bishop2[1] else 1
     bishop2_vertical_move = 1 if bishop1[1] < bishop2[1] else -1
 
+    borders = "ah18"
     while bishop1[0] not in borders and bishop1[1] not in borders:
         col = ord(bishop1[0]) + bishop1_horizontal_move
         row = ord(bishop1[1]) + bishop1_vertical_move
