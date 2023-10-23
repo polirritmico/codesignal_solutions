@@ -32,25 +32,37 @@ Here is the bishop's path:
 https://codesignal.s3.amazonaws.com/uploads/1664318502/example.png?raw=true
 """
 
+from typing import Optional
+
 
 def solution(
-    board_size: list[int], init_position: list[int], init_direction: list[int], k: int
+    board_size: list[int], init_pos: list[int], init_dir: list[int], steps: int
 ) -> list[int]:
-    limit_top_left = (0, 0)  # col, row
-    limit_btm_left = (0, board_size[0] - 1)
-    limit_top_right = (board_size[1] - 1, 0)
-    limit_btm_right = (board_size[1] - 1, board_size[0] - 1)
-    board_limits = (limit_top_left, limit_top_right, limit_btm_right, limit_btm_left)
+    current_pos = init_pos
+    current_dir = init_dir
+    at_init_position_counter = 0
+    full_diagonal_path = []
+    while at_init_position_counter != 2:
+        full_diagonal_path.append(current_pos)
+        next_pos = [current_pos[0] + current_dir[0], current_pos[1] + current_dir[1]]
+        direction_changes = 0
+        if next_pos[0] < 0 or next_pos[0] >= board_size[0]:
+            direction_changes += 1
+            current_dir[0] *= -1
+            next_pos[0] = current_pos[0]
+        if next_pos[1] < 0 or next_pos[1] >= board_size[1]:
+            direction_changes += 1
+            current_dir[1] *= -1
+            next_pos[1] = current_pos[1]
 
-    horizontal_direction = init_direction[1]
-    vertical_direction = init_direction[0]
+        if direction_changes != 2:
+            current_pos = next_pos
+        if current_pos == init_pos:
+            at_init_position_counter += 1
 
-    direction = init_direction
-    position = init_position
-    for move in range(1):
-        next_position = (position[0] + direction[0], position[1] + direction[1])
-        # if next_position[0]
-        # direction = update_direction(direction, position, board_limits)
+    total_steps_in_full_path = len(full_diagonal_path)
+    final_position = steps % total_steps_in_full_path
+    return full_diagonal_path[final_position]
 
 
 def main():
