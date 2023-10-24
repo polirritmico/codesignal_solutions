@@ -1,4 +1,4 @@
-
+with season_results as (
 select
 	sum(case when first_team_score > second_team_score then 1 else 0 end) as first_team_wins,
 	sum(case when second_team_score > first_team_score then 1 else 0 end) as second_team_wins,
