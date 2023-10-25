@@ -36,40 +36,18 @@ There are only 4 Thursdays in November 2016.
 
 """
 
+from calendar import day_name
 from datetime import datetime, timedelta
 
 
-def solution(week: int, week_day: str, target_month: str, year_number: int) -> int:
-    month_names = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ]
-    weekdays = [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-    ]
-    target_month = month_names.index(target_month) + 1
-    holiday = datetime(year_number, target_month, 1).date()
-    target_weekday = weekdays.index(week_day)
+def solution(week_number: int, week_day: str, month_name: str, year_number: int) -> int:
+    holiday = datetime.strptime(f"{year_number}-{month_name}-1", "%Y-%B-%d").date()
+    target_month = holiday.month
+    target_weekday = list(day_name).index(week_day)
     while True:
         if holiday.weekday() == target_weekday:
-            week -= 1
-        if week == 0:
+            week_number -= 1
+        if week_number == 0:
             return holiday.day
         holiday += timedelta(days=1)
         if holiday.month != target_month:
