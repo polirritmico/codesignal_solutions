@@ -50,7 +50,6 @@ def solution(tree: str) -> list[int]:
     innermost_nodes = []
     reading_number = False
     current_number = ""
-
     for target_level in range(innermost_level, -1, -1):
         for index, char in enumerate(tree):
             if char == "(":
