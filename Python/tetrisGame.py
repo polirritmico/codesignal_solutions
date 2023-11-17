@@ -102,7 +102,8 @@ The number of points you will have by the end of the game.
 
 class Piece:
     bottom_row_weight: int
-    coord: list[int, int]
+    col: int
+    row: int
     shape: list[list[str]]
     width: int
     height: int
@@ -112,14 +113,15 @@ class Piece:
         self.shape = shape
         self.height = len(shape)
         self.width = len(shape[0])
-        self.coord = [0, 0]
+        self.row = 0
+        self.col = 0
         self.rotations = 0
 
     def rotate_clockwise(self) -> list[list[str]]:
         self.shape = [list(row) for row in zip(*self.shape[::-1])]
         self.height = len(self.shape)
         self.width = len(self.shape[0])
-        self.rotations += 1
+        self.rotations = 0 if self.rotations == 3 else self.rotations + 1
         return self.shape
 
 
@@ -136,55 +138,51 @@ class Tetris:
         self.points = 0
 
     def find_optimal_move(self, piece: Piece) -> list[int, int]:
-        best_score = 0
-        best_positions = []
-        original_field = list(line.copy() for line in self.field)
+        best_score: int = 0
+        high_scores: list[dict[str, int]]
         for rotation in range(4):
             for col in range(self.cols - piece.width + 1):
-                self.field = list(line.copy() for line in original_field)
-                piece.coord[1] = col
+                piece.col = col
                 self.drop_piece(piece)
-                current_score = self.count_row_points(piece.coord[0] + piece.height - 1)
+                current_score = self.count_row_points(piece)
                 if current_score > best_score:
                     best_score = current_score
-                    best_positions = [(current_score, rotation, col)]
+                    high_scores = [
+                        {"score": current_score, "rotations": rotation, "column": col}
+                    ]
                 elif current_score == best_score:
-                    best_positions.append((current_score, rotation, col))
+                    high_scores.append(
+                        {"score": current_score, "rotations": rotation, "column": col}
+                    )
+                self.remove_piece(piece)
             piece.rotate_clockwise()
 
-        self.field = original_field
-        if len(best_positions) == 1:
-            best_position = best_positions[0]
-        else:
-            criteria = (lambda score: -score[0], lambda rot: rot[1], lambda ht: ht[2])
-            best_position = min(best_positions, key=lambda x: criteria)
-        piece.coord[1] = best_position[2]
-        while piece.rotations % 4 != best_position[1]:
+        criteria = (
+            lambda c: c["score"],
+            lambda c: -c["rotations"],
+            lambda c: -c["column"],
+        )
+        best_position = max(high_scores, key=lambda x: criteria)
+        piece.col = best_position["column"]
+        while piece.rotations != best_position["rotations"]:
             piece.rotate_clockwise()
 
-    def count_row_points(self, row: int) -> int:
-        return self.field[row].count("#")
+    def count_row_points(self, piece: Piece) -> int:
+        piece_rows_range = range(piece.row, piece.row + piece.height)
+        return sum(self.field[row].count("#") for row in piece_rows_range)
+
+    def drop_piece(self, piece: Piece) -> None:
+        lowest_valid_row = self.get_drop_piece_row(piece)
+        piece.row = lowest_valid_row
+        self.set_piece_in_field(piece)
 
     def get_drop_piece_row(self, piece: Piece) -> int:
         lowest_valid_row = 0
         for top_shape_row in range(self.rows + 1 - piece.height):
-            if self.piece_collision(piece, top_shape_row, piece.coord[1]):
+            if self.piece_collision(piece, top_shape_row, piece.col):
                 break
             lowest_valid_row = top_shape_row
         return lowest_valid_row
-
-    def drop_piece(self, piece: Piece) -> None:
-        lowest_valid_row = self.get_drop_piece_row(piece)
-        piece.coord[0] = lowest_valid_row
-        self.set_piece_in_field(piece)
-
-    def set_piece_in_field(self, piece: Piece) -> None:
-        for row, shape_line in enumerate(piece.shape):
-            for col, piece_char in enumerate(shape_line):
-                x = piece.coord[0] + row
-                y = piece.coord[1] + col
-                if piece_char != ".":
-                    self.field[x][y] = piece_char
 
     def piece_collision(self, piece: Piece, row: int, col: int) -> bool:
         for piece_row, shape_line in enumerate(piece.shape):
@@ -194,13 +192,25 @@ class Tetris:
                     return True
         return False
 
+    def set_piece_in_field(self, piece: Piece) -> None:
+        for row, shape_line in enumerate(piece.shape):
+            for col, piece_char in enumerate(shape_line):
+                if piece_char != ".":
+                    self.field[row + piece.row][col + piece.col] = piece_char
+
+    def remove_piece(self, piece: Piece) -> None:
+        for row, line in enumerate(piece.shape):
+            for col, piece_char in enumerate(line):
+                if piece_char == "#":
+                    self.field[row + piece.row][col + piece.col] = "."
+
     def remove_filled_lines(self) -> int:
-        filled_lines_rows = self.get_filled_lines()
-        lines_to_remove = len(filled_lines_rows)
-        if lines_to_remove > 0:
-            for line_number in filled_lines_rows:
+        rows_of_filled_lines = self.get_filled_lines()
+        lines_to_remove_count = len(rows_of_filled_lines)
+        if lines_to_remove_count > 0:
+            for line_number in rows_of_filled_lines:
                 self.remove_line(line_number)
-        return lines_to_remove
+        return lines_to_remove_count
 
     def get_filled_lines(self) -> list[int]:
         filled_lines = []
@@ -210,8 +220,8 @@ class Tetris:
         return filled_lines
 
     def remove_line(self, line_number: int) -> None:
-        new_line = ["." for _ in range(self.cols)]
         del self.field[line_number]
+        new_line = ["." for _ in range(self.cols)]
         self.field.insert(0, new_line)
 
 
@@ -227,24 +237,14 @@ def solution(pieces: list[list[list[str]]]) -> int:
 
 def main():
     case = [
-        [[".", "#", "#"], ["#", "#", "."]],
         [[".", "#", "."], ["#", "#", "#"]],
-        [["#", "#", "."], [".", "#", "#"]],
-        [[".", "#", "."], ["#", "#", "#"]],
-        [["#", "#", "#", "#"]],
         [["#", ".", "."], ["#", "#", "#"]],
-        [["#", "#"], ["#", "#"]],
-        [["#", "#", "#"], [".", ".", "#"]],
-        [[".", "#", "#"], ["#", "#", "."]],
-        [[".", "#", "."], ["#", "#", "#"]],
         [["#", "#", "."], [".", "#", "#"]],
-        [[".", "#", "."], ["#", "#", "#"]],
         [["#", "#", "#", "#"]],
-        [["#", ".", "."], ["#", "#", "#"]],
+        [["#", "#", "#", "#"]],
         [["#", "#"], ["#", "#"]],
-        [["#", "#", "#"], [".", ".", "#"]],
     ]
-    # expected = 3
+    # expected = 1
     print(solution(case))
 
 

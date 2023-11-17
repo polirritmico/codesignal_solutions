@@ -143,7 +143,7 @@ class TestCustom(unittest.TestCase):
             [".", "#", "#", "."],
         ]
         piece = Piece(piece_shape)
-        piece.coord[1] = 1
+        piece.col = 1
         tetris = Tetris(4, 4)
         tetris.field = field
         tetris.drop_piece(piece)
@@ -168,7 +168,7 @@ class TestCustom(unittest.TestCase):
             ["#", "#", ".", ".", "."],
         ]
         piece = Piece(piece_shape)
-        piece.coord[1] = 2
+        piece.col = 2
         tetris = Tetris(4, 5)
         tetris.field = field
         tetris.drop_piece(piece)
@@ -329,7 +329,7 @@ class TestBase(unittest.TestCase):
         output = solution(case)
         self.assertEqual(output, expected)
 
-    @unittest.skip
+    # @unittest.skip
     def test_case9(self):
         case = [
             [["#", "#"], ["#", "#"]],
