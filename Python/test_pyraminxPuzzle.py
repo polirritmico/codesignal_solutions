@@ -3,24 +3,13 @@
 
 import unittest
 
-# from pyraminxPuzzle import Pyraminx, solution
-from pyraminxPuzzle import solution
+from pyraminxPuzzle import Pyraminx, solution
 
 
-@unittest.skip
+# @unittest.skip
 class TestCustom(unittest.TestCase):
-    # def setUp(self):
-    #     self.pyraminx = Pyraminx(["R", "G", "Y", "O"])
-
-    # @unittest.skip
-    def test_coords(self):
-        move = "U"
-        faces = [
-            [f"U{i}" for i in range(9)],
-            [f"B{i}" for i in range(9)],
-            [f"L{i}" for i in range(9)],
-            [f"R{i}" for i in range(9)],
-        ]
+    def setUp(self):
+        self.pyraminx = Pyraminx(["R", "G", "Y", "O"])
 
     # @unittest.skip
     def test_example_move_U(self):
@@ -318,7 +307,7 @@ class TestBase(unittest.TestCase):
         output = solution(face_colors, moves)
         self.assertListEqual(output, expected)
 
-    @unittest.skip
+    # @unittest.skip
     def test_case9(self):
         face_colors = ["W", "A", "S", "D"]
         moves = [
