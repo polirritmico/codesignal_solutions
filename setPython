@@ -3,12 +3,12 @@
 python_folder=Python
 
 if [[ -z $1 || $1 == "-r" && -z $2 ]]; then
-    echo "Falta el nombre de los archivos."
+    echo "Missing filenames"
     exit 1
 elif [[ $1 == "-h" ]]; then
-    echo -e "Uso: ./setPython NOMBRE\nOpciones:\n"\
-            "-r NOMBRE → Restaura 'NOMBRE.py' y 'test_NOMBRE.py'\n"\
-            "-e editar con nvim\n"\
+    echo -e "Usage: ./setPython NAME\nOptions:\n"\
+            "-r NAME → Restore 'NAME.py' and 'test_NAME.py'\n"\
+            "-e edit with nvim\n"\
             "-c || -d → Clean\n -m → move to '${python_folder}'"
     exit
 elif [[ $1 == "-m" ]]; then
@@ -29,7 +29,7 @@ elif [[ $1 == "-c" || $1 == "-d" ]]; then
     rm ./*.py
     exit
 elif [[ -e $1.py || -e test_$1.py ]]; then
-    echo "Ya existe un archivo con el mismo nombre."
+    echo "A file with the same name already exists."
     exit 1
 fi
 
