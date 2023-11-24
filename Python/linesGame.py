@@ -153,23 +153,20 @@ class Ball:
         return f"{self.color} ({self.row}, {self.col})"
 
     def __repr__(self) -> str:
-        return self.color.rjust(4)
+        # return self.color.rjust(4)
+        return self.color
 
 
 class LineGame:
     ball_generator: iter
-    score: int
-    height: int
-    width: int
     min_line_size: int = 5
     field: list[list[Ball | None]]
     selected: Ball | None
 
     def __init__(self, field_raw: list[list[str]]) -> None:
-        self.height = len(field_raw)
-        self.height = len(field_raw[0])
         self.score = 0
-        self.selected: Ball | None = None
+        self.selected = None
+        self.size = len(field_raw)
         self.field = []
         for x, row in enumerate(field_raw):
             new_row = []
@@ -188,10 +185,8 @@ class LineGame:
             self.field[new_ball.row][new_ball.col] = new_ball
 
     def are_connected(self, target_coord: list[int, int]) -> bool:
-        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-        checked_tiles = [
-            [False for _ in range(self.height)] for _ in range(self.height)
-        ]
+        directions = ((0, 1), (0, -1), (1, 0), (-1, 0))
+        checked_tiles = [[False for _ in range(self.size)] for _ in range(self.size)]
         tiles_to_explore = [(self.selected.row, self.selected.col)]
 
         while len(tiles_to_explore) > 0:
@@ -205,15 +200,17 @@ class LineGame:
                 row = current[0] + direction[0]
                 col = current[1] + direction[1]
 
-                if row < 0 or row >= self.height or col < 0 or col >= self.height:
+                if row < 0 or row >= self.size or col < 0 or col >= self.size:
                     continue
                 if not checked_tiles[row][col] and self.field[row][col] is None:
                     tiles_to_explore.append((row, col))
         return False
 
     def move_ball(self, origin: Ball, target: list[int, int]) -> None:
-        self.field[target[0]][target[1]] = origin
         self.field[origin.row][origin.col] = None
+        self.field[target[0]][target[1]] = origin
+        origin.row = target[0]
+        origin.col = target[1]
 
     def count_points(self, balls_lines: list[list[Ball]]) -> int:
         lines = len(balls_lines)
@@ -224,18 +221,17 @@ class LineGame:
 
     def get_all_diagonals(self) -> list[list[Ball | None]]:
         diagonals = []
-        size = self.height
-        for col in range(size):
-            ranges = range(size - col)
+        for col in range(self.size):
+            ranges = range(self.size - col)
             left_diagonal = [self.field[col + i][i] for i in ranges]
-            right_diagonal = [self.field[col + i][size - 1 - i] for i in ranges]
+            right_diagonal = [self.field[col + i][self.size - 1 - i] for i in ranges]
             diagonals.append(left_diagonal)
             diagonals.append(right_diagonal)
 
-        for col in range(1, size):
-            ranges = range(size - col)
+        for col in range(1, self.size):
+            ranges = range(self.size - col)
             left_diagonal = [self.field[i][col + i] for i in ranges]
-            right_diagonal = [self.field[i][size - col - i - 1] for i in ranges]
+            right_diagonal = [self.field[i][self.size - col - i - 1] for i in ranges]
             diagonals.append(left_diagonal)
             diagonals.append(right_diagonal)
 
@@ -243,7 +239,7 @@ class LineGame:
 
     def completed_lines_balls(self) -> list[list[Ball]]:
         full_rows = [row for row in self.field]
-        full_columns = [[row[col] for row in self.field] for col in range(self.height)]
+        full_columns = [[row[col] for row in self.field] for col in range(self.size)]
         full_diagonals = self.get_all_diagonals()
         rows = self.filter_completed_lines(full_rows)
         columns = self.filter_completed_lines(full_columns)
@@ -256,28 +252,18 @@ class LineGame:
         for raw_line in full_lines:
             line = []
             line_color = ""
-            for i in range(len(raw_line)):
-                current = raw_line[i]
-                if len(line) == 0:
-                    if isinstance(current, Ball):
-                        line_color = current.color
-                        line.append(current)
-                else:
-                    if isinstance(current, Ball):
-                        if line_color == current.color:
-                            line.append(current)
-                            continue
-                        elif len(line) >= self.min_line_size:
-                            filtered_lines.append(line)
-                        line = [current]
-                        line_color = current.color
-                    else:
-                        if len(line) >= self.min_line_size:
-                            filtered_lines.append(line)
-                        line = []
-                        line_color = ""
-            if len(line) >= self.min_line_size:
-                filtered_lines.append(line)
+            for tile in raw_line:
+                if tile is None:
+                    line = []
+                    line_color = ""
+                    continue
+                if line_color != tile.color:
+                    line = []
+                    line_color = tile.color
+                line.append(tile)
+
+                if len(line) >= self.min_line_size and line not in filtered_lines:
+                    filtered_lines.append(line)
 
         return filtered_lines
 
@@ -289,21 +275,15 @@ class LineGame:
 
     def click(self, coord: list) -> None:
         current = self.field[coord[0]][coord[1]]
-        if self.selected:
-            if current is None:
-                if self.are_connected(coord):
-                    self.move_ball(self.selected, coord)
-                    balls_lines = self.completed_lines_balls()
-                    if len(balls_lines) == 0:
-                        self.add_new_balls(3)
-                    else:
-                        self.score += self.count_points(balls_lines)
-                        self.remove_balls(balls_lines)
-                self.selected = None
-            else:
-                self.selected = current
-        elif isinstance(current, Ball):
-            self.selected = current
+        if current is None and self.selected is not None and self.are_connected(coord):
+            self.move_ball(self.selected, coord)
+            balls_lines = self.completed_lines_balls()
+            if len(balls_lines) == 0:
+                self.add_new_balls(3)
+                balls_lines = self.completed_lines_balls()
+            self.score += self.count_points(balls_lines)
+            self.remove_balls(balls_lines)
+        self.selected = current
 
 
 def solution(
@@ -322,21 +302,22 @@ def solution(
 
 
 def main():
+    # case 10
     field = [
-        ["V", ".", ".", ".", "O", ".", ".", ".", "O"],
-        ["V", "O", ".", ".", "O", ".", ".", "O", "V"],
-        ["V", ".", "O", ".", "O", ".", "O", ".", "."],
-        ["V", ".", ".", "O", "O", "O", ".", ".", "."],
-        [".", ".", ".", ".", ".", ".", ".", ".", "O"],
-        ["V", ".", ".", "O", "O", "O", ".", ".", "."],
-        ["V", ".", "O", ".", "O", ".", "O", ".", "."],
-        ["V", "O", ".", ".", "O", ".", ".", "O", "."],
-        ["V", ".", ".", ".", "O", ".", ".", ".", "O"],
+        ["Y", ".", ".", ".", ".", ".", ".", ".", "Y"],
+        [".", "Y", ".", ".", ".", ".", ".", ".", "."],
+        [".", ".", "Y", ".", ".", ".", ".", ".", "."],
+        [".", ".", ".", "Y", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "Y", ".", ".", "."],
+        [".", ".", ".", ".", ".", ".", "Y", ".", "."],
+        [".", ".", ".", ".", ".", ".", ".", "Y", "."],
+        [".", ".", ".", ".", "Y", "Y", "Y", "Y", "."],
     ]
-    clicks = [[4, 8], [4, 4], [1, 8], [4, 0]]
-    new_balls = []
-    new_balls_coords = []
-    # expected = 36
+    clicks = [[0, 8], [8, 8], [0, 0], [8, 8]]
+    new_balls = ["G", "Y", "Y"]
+    new_balls_coords = [[0, 1], [4, 4], [0, 0]]
+    # expected = 14
     print(solution(field, clicks, new_balls, new_balls_coords))
 
 
