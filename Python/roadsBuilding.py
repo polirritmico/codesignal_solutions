@@ -64,25 +64,13 @@ no need to build looping roads, i.e. roads that lead back from a city to itself.
 
 """
 
-
-def get_missing_roads(
-    city: int, cities: list[int], current_roads: list[list[int, int]]
-) -> list[list[int, int]]:
-    neighboring_cities = [other_city for other_city in cities if other_city != city]
-    all_roads = [sorted([city, other_city]) for other_city in neighboring_cities]
-    missing_roads = [road for road in all_roads if road not in current_roads]
-    return missing_roads
+from itertools import combinations
 
 
 def solution(cities: int, kingdom_roads: list[list[int, int]]) -> list[list[int, int]]:
-    cities = [city for city in range(cities)]
     kingdom_roads = [sorted(road) for road in kingdom_roads]
-    missing_roads = []
-    for city in cities:
-        missing_city_roads = get_missing_roads(city, cities, kingdom_roads)
-        for road in missing_city_roads:
-            if road not in missing_roads:
-                missing_roads.append(road)
+    all_roads = [sorted(road) for road in combinations(range(cities), 2)]
+    missing_roads = [road for road in all_roads if road not in kingdom_roads]
     return sorted(missing_roads)
 
 
