@@ -7,12 +7,13 @@ import argparse
 import json
 import os
 import sys
+from typing import Any
 
 
 def get_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         add_help=True,
-        description="Json test importer. A script to import Codesignal json tests into a working pytest file.",
+        description="Test importer. A script to import Codesignal html and json tests into a working pytest file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         prog="importer-test",
     )
@@ -51,19 +52,25 @@ def get_args(argv=None) -> argparse.Namespace:
         default=False,
         help="Append the tests into a the test file without removing its content.",
     )
+    parser.add_argument(
+        "-p",
+        "--page",
+        default="",
+        help="Import tests from html downloaded page.",
+    )
 
     return parser.parse_args(argv)
 
 
-class JsonTest:
+class Test:
     def __init__(
-        self, name: str, case_variables: dict[str, any], expected: any
+        self, name: str, case_variables: dict[str, type], expected: Any
     ) -> None:
         self.name: str = name
-        self.variables: dict[str, any] = case_variables
-        self.expected: any = expected
+        self.variables: dict[str, Any] = case_variables
+        self.expected: Any = expected
 
-    def generate_test(self, source_filename: str) -> str:
+    def generate_test(self) -> str:
         test_str = "# @pytest.mark.skip()\n"
         test_str += f"def {self.name}():\n"
         indent = "    "
@@ -86,8 +93,8 @@ class JsonTestImporter:
     ) -> None:
         self.source_code_file: str = source_code_name
         self.json_test_files: list[str] = test_files
-        self.raw_data: dict[str, json] = {}
-        self.test_collection: dict[str, JsonTest] = {}
+        self.raw_data: dict[str, dict] = {}
+        self.test_collection: dict[str, Test] = {}
         self.insert_mode: bool = insert_mode
         self.output_data: str = ""
 
@@ -124,10 +131,10 @@ class JsonTestImporter:
         self.test_collection = self.populate_test_collection(self.raw_data)
         output_file: str = "\n\n" if self.insert_mode else self.get_header()
         for name, test in self.test_collection.items():
-            output_file += test.generate_test(self.source_code_file)
+            output_file += test.generate_test()
         self.output_data = output_file
 
-    def populate_test_collection(self, raw_data: dict) -> dict[str, JsonTest]:
+    def populate_test_collection(self, raw_data: dict) -> dict[str, Test]:
         assert raw_data is not None or len(raw_data) != 0
         test_collection = {}
         for test_filename, test_data in raw_data.items():
@@ -135,10 +142,10 @@ class JsonTestImporter:
             test_number = int("".join(filter(str.isdigit, test_filename)))
             name = f"test_case{test_number}"
             expected_output = test_data.get("output")
-            variables: dict[str, any] = test_data.get("input")
+            variables: dict[str, Any] = test_data.get("input")
             assert expected_output is not None, "Missing output data"
             assert variables is not None, "Missing input data"
-            test_collection[test_filename] = JsonTest(name, variables, expected_output)
+            test_collection[test_filename] = Test(name, variables, expected_output)
         return test_collection
 
     def export_test_file(self, output_file: str) -> None:
@@ -148,7 +155,14 @@ class JsonTestImporter:
         self.write_output_data_to_file(output_file)
 
 
+class HtmlTestImporter:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+
+
 def main(argv: argparse.Namespace) -> None:
+    if argv.page != "":
+        html_importer = HtmlTestImporter(argv.page)
     importer = JsonTestImporter(argv.code_file, argv.filename, argv.insert)
     importer.read_files()
     importer.generate_test_file_data()
@@ -156,5 +170,6 @@ def main(argv: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    # sys.exit(main(get_args(["roadsBuilding.py", "test-5.json"])))
-    sys.exit(main(get_args(sys.argv[1:])))
+    main(get_args(["roadsBuilding.py", "-p", "sample.html", "test-5.json"]))
+    # main(get_args(sys.argv[1:]))
+    sys.exit()

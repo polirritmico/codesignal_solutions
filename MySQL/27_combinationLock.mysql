@@ -1,8 +1,0 @@
-CREATE PROCEDURE solution()
-BEGIN
-	SET @prev_product := 1;
-	SELECT @prev_product := @prev_product * CHAR_LENGTH(characters) AS combinations
-	FROM discs
-	ORDER BY combinations DESC LIMIT 1
-	;
-END

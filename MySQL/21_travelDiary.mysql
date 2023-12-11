@@ -1,9 +1,0 @@
-CREATE PROCEDURE solution()
-BEGIN
-	SELECT 
-		GROUP_CONCAT(
-			DISTINCT country 
-			ORDER BY country ASC
-		) AS countries
-	FROM diary;
-END
