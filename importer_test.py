@@ -23,10 +23,17 @@ def get_args(argv=None) -> argparse.Namespace:
         version=f"{parser.prog} v{__version__}",
     )
     parser.add_argument(
+        "code_file",
+        # nargs=1,
+        help="File with the code to test.",
+        metavar="SOURCE_FILE",
+        type=str,
+    )
+    parser.add_argument(
         "filename",
         nargs="+",  # one or more files
-        help="Json filename",
-        metavar="FILE",
+        help="Json filename with the test case variables and expected output.",
+        metavar="JSON_FILE",
         type=str,
     )
     parser.add_argument(
@@ -37,6 +44,13 @@ def get_args(argv=None) -> argparse.Namespace:
         metavar="FILE",
         type=str,
     )
+    parser.add_argument(
+        "-i",
+        "--insert",
+        action="store_true",
+        default=False,
+        help="Append the tests into a the test file without removing its content.",
+    )
 
     return parser.parse_args(argv)
 
@@ -45,19 +59,37 @@ class JsonTest:
     def __init__(
         self, name: str, case_variables: dict[str, any], expected: any
     ) -> None:
-        self.name = name
-        self.variables = case_variables
-        self.expected = expected
+        self.name: str = name
+        self.variables: dict[str, any] = case_variables
+        self.expected: any = expected
 
-    def generate_test(self, name):
-        pass
+    def generate_test(self, source_filename: str) -> str:
+        test_str = "# @pytest.mark.skip()\n"
+        test_str += f"def {self.name}():\n"
+        indent = "    "
+        assert self.name != ""
+        assert self.variables is not None and self.variables != {}
+        assert self.expected is not None
+        for var_name, var_value in self.variables.items():
+            test_str += f"{indent}{var_name} = {var_value}\n"
+        test_str += f"{indent}expected = {self.expected}\n"
+        variables = ", ".join(self.variables.keys())
+        test_str += f"{indent}output = solution({variables})\n"
+        test_str += f"{indent}assert output == expected\n\n\n"
+
+        return test_str
 
 
 class JsonTestImporter:
-    def __init__(self, file_list: list[str]) -> None:
-        self.json_test_files: list[str] = file_list
+    def __init__(
+        self, source_code_name: str, test_files: list[str], insert_mode: bool
+    ) -> None:
+        self.source_code_file: str = source_code_name
+        self.json_test_files: list[str] = test_files
         self.raw_data: dict[str, json] = {}
-        self.test_collection: list[JsonTest] = []
+        self.test_collection: dict[str, JsonTest] = {}
+        self.insert_mode: bool = insert_mode
+        self.output_data: str = ""
 
     def read_file(self, filename):
         try:
@@ -65,47 +97,64 @@ class JsonTestImporter:
                 raw_data = json.load(stream)
         except Exception as err:
             raise IOError(f"Error reading json file {filename}", err)
-
         return raw_data
 
     def read_files(self) -> None:
+        self.json_test_files.sort(key=lambda c: int("".join(filter(str.isdigit, c))))
         for file in self.json_test_files:
             self.raw_data[file] = self.read_file(file)
 
-    def get_vars_names(self, file_data: str) -> list[str]:
-        vars_names = []
-        pass
+    def write_output_data_to_file(self, target_file: str) -> None:
+        write_mode = "a" if self.insert_mode else "w"
+        try:
+            with open(target_file, write_mode, encoding="utf-8") as file:
+                file.write(self.output_data)
+        except Exception as err:
+            IOError("Error writing to the output file", err)
 
-    def generate_tests_from_input_data(self) -> None:
+    def get_header(self) -> str:
+        header = "#!/usr/bin/env python\n# -*- coding: utf-8 -*-\n\nimport pytest\n\n"
+        source_code_file = self.source_code_file
+        if source_code_file.endswith(".py"):
+            source_code_file = source_code_file[:-3]
+        source_import = f"from {source_code_file} import solution\n\n\n"
+        return header + source_import
+
+    def generate_test_file_data(self) -> None:
         self.test_collection = self.populate_test_collection(self.raw_data)
+        output_file: str = "\n\n" if self.insert_mode else self.get_header()
+        for name, test in self.test_collection.items():
+            output_file += test.generate_test(self.source_code_file)
+        self.output_data = output_file
 
-        for test in self.test_collection:
-            test_string = test.generate_test()
-
-    def populate_test_collection(self, raw_data: dict) -> list[JsonTest]:
+    def populate_test_collection(self, raw_data: dict) -> dict[str, JsonTest]:
         assert raw_data is not None or len(raw_data) != 0
-        test_collection = []
-        for test_number, test_filename in enumerate(self.raw_data):
-            name = f"test_case{test_number + 1}"
-            data: dict[str, str] = self.raw_data[test_filename]
-            expected_output = data.get("output")
-            variables: dict[str, any] = data.get("input")
+        test_collection = {}
+        for test_filename, test_data in raw_data.items():
+            # Good enough. Maybe provide a more robust way.
+            test_number = int("".join(filter(str.isdigit, test_filename)))
+            name = f"test_case{test_number}"
+            expected_output = test_data.get("output")
+            variables: dict[str, any] = test_data.get("input")
             assert expected_output is not None, "Missing output data"
             assert variables is not None, "Missing input data"
-            test_collection.append(JsonTest(name, variables, expected_output))
+            test_collection[test_filename] = JsonTest(name, variables, expected_output)
         return test_collection
 
-    def generate_test_file(self, output_file: str) -> None:
-        pass
+    def export_test_file(self, output_file: str) -> None:
+        assert self.output_data != "", "Error: empty output_data."
+        if output_file == "":
+            output_file = f"test_{self.source_code_file}"
+        self.write_output_data_to_file(output_file)
 
 
 def main(argv: argparse.Namespace) -> None:
-    importer = JsonTestImporter(argv.filename)
+    importer = JsonTestImporter(argv.code_file, argv.filename, argv.insert)
     importer.read_files()
-    importer.generate_tests_from_input_data()
-    # importer.generate_test_file(args.output)
+    importer.generate_test_file_data()
+    importer.export_test_file(argv.output)
 
 
 if __name__ == "__main__":
-    sys.exit(main(get_args(["test-5.json"])))
-    # sys.exit(main(get_args(sys.argv[1:])))
+    # sys.exit(main(get_args(["roadsBuilding.py", "test-5.json"])))
+    sys.exit(main(get_args(sys.argv[1:])))
