@@ -14,7 +14,9 @@ elif [[ $1 == "-h" ]]; then
 elif [[ $1 == "-m" ]]; then
     rm __main__.py
     rm -r __pycache__
+    mv importer_test.py importer_test
     mv ./*.py Python
+    mv importer_test importer_test.py
     exit
 elif [[ $1 == "-r" ]]; then
     cp "$python_folder"/"$2".py "$2".py
@@ -26,7 +28,9 @@ elif [[ $1 == "-e" ]]; then
     exit
 elif [[ $1 == "-c" || $1 == "-d" ]]; then
     rm -r __pycache__
+    mv importer_test.py importer_test
     rm ./*.py
+    mv importer_test importer_test.py
     exit
 elif [[ -e $1.py || -e test_$1.py ]]; then
     echo "A file with the same name already exists."
